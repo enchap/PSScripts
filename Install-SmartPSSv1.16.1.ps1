@@ -114,8 +114,9 @@ else {
 # 5. Install SmartPSS
 
 Write-Host "Installing SmartPSS." -ForegroundColor Cyan
-$InstallArgs = "/S /v/qn"
+$InstallArgs = "/S"
 Start-Process $InstallerPath -ArgumentList $InstallArgs -Wait
 Start-Sleep -Seconds 5
 
 Write-Host "Setup complete." -ForegroundColor Green
+
