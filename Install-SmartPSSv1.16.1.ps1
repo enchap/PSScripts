@@ -88,11 +88,10 @@ $FetchBody = @{
     project = "install"
     tool = "smartpss"
     platform_arch = "windows-x64"
-    latest_filename = "SmartPSS.exe"
-    file_id = "1.16.1.R.20170220"
+    file_id = "52"
 } | ConvertTo-Json
 
-$response = Invoke-RestMethod -Uri "$PortalUrl/api/v2/presign-latest" -Method POST -Headers $Headers -Body $FetchBody
+$response = Invoke-RestMethod -Uri "$PortalUrl/api/v2/presign-download" -Method POST -Headers $Headers -Body $FetchBody
 
 # Set Installer Path to the Public Profile Path
 $InstallerPath = Join-Path -Path $PublicProfilePath -ChildPath $response.filename
@@ -120,4 +119,3 @@ Start-Process $InstallerPath -ArgumentList $InstallArgs -Wait
 Start-Sleep -Seconds 5
 
 Write-Host "Setup complete." -ForegroundColor Green
-
