@@ -1,5 +1,3 @@
-﻿# 1. Check Admin
-
 $ErrorActionPreference = "Stop"
 if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Warning "Please run as Administrator to install the software."
@@ -91,6 +89,7 @@ $FetchBody = @{
     tool = "smartpss"
     platform_arch = "windows-x64"
     source_version = "1.16.1.R.20170220"
+
 } | ConvertTo-Json
 
 $response = Invoke-RestMethod -Uri "$PortalUrl/api/v2/presign-latest" -Method POST -Headers $Headers -Body $FetchBody
