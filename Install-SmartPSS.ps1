@@ -89,6 +89,7 @@ $FetchBody = @{
     tool = "smartpss"
     platform_arch = "windows-x64"
     latest_filename = "SmartPSS.exe"
+
 } | ConvertTo-Json
 
 $response = Invoke-RestMethod -Uri "$PortalUrl/api/v2/presign-latest" -Method POST -Headers $Headers -Body $FetchBody
@@ -114,7 +115,7 @@ else {
 # 5. Install SmartPSS
 
 Write-Host "Installing SmartPSS." -ForegroundColor Cyan
-$InstallArgs = "/S /v/qn"
+$InstallArgs = "/S"
 Start-Process $InstallerPath -ArgumentList $InstallArgs -Wait
 Start-Sleep -Seconds 5
 
