@@ -19,23 +19,23 @@ if (!(Test-Path -Path $PublicProfilePath)) {
 # Configuration for Pairing
 $PortalUrl  = "https://artifacts.digitalsecurityguard.com"
 $OrgSlug    = "en-projects"
-$AppId      = "powershell-script"
-$InstanceId = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { "unknown" }
-$Platform   = "windows"
-$Arch       = "x64"
+$AppID      = "powershell-script"
+$InstanceID = if ($env:COMPUTERNAME) { $env:COMPUTERNAME } else { "unknown" }
+$platform   = "windows"
+$arch       = "x64"
 
 # Start Pairing
-$Body = @{
+$body = @{
     org_slug        = $OrgSlug
-    app_id          = $AppId
-    instance_id     = $InstanceId
-    hostname        = $InstanceId
-    platform        = $Platform
-    arch            = $Arch
+    app_id          = $AppID
+    instance_id     = $InstanceID
+    hostname        = $InstanceID
+    platform        = $platform
+    arch            = $arch
 } | ConvertTo-Json
 
 Write-Host "Initiating device pairing for $OrgSlug." -ForegroundColor Cyan
-$Pairing = Invoke-RestMethod -Uri "$PortalUrl/api/v2/pairing/start" -Method POST -ContentType "application/json" -Body $Body
+$Pairing = Invoke-RestMethod -Uri "$PortalUrl/api/v2/pairing/start" -Method POST -ContentType "application/json" -Body $body
 
 $PairingCode = $Pairing.pairing_code
 $PairingURL = $Pairing.pairing_url
@@ -88,8 +88,8 @@ $FetchBody = @{
     project = "install"
     tool = "smartpss"
     platform_arch = "windows-x64"
+    latest_filename = "SmartPSS.exe"
     source_version = "1.16.1.R.20170220"
-
 } | ConvertTo-Json
 
 $response = Invoke-RestMethod -Uri "$PortalUrl/api/v2/presign-latest" -Method POST -Headers $Headers -Body $FetchBody
@@ -114,7 +114,7 @@ else {
 
 # 5. Install SmartPSS
 
-Write-Host "Installing." -ForegroundColor Cyan
+Write-Host "Installing SmartPSS." -ForegroundColor Cyan
 $InstallArgs = "/S /v/qn"
 Start-Process $InstallerPath -ArgumentList $InstallArgs -Wait
 Start-Sleep -Seconds 5
