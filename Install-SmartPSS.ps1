@@ -3,6 +3,7 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Write-Warning "Please run as Administrator to install the software."
     Exit
 }
+$ErrorActionPreference = "Stop"
 
 # File Variables
 $PublicProfilePath = "C:\Data\SmartPSS\"
@@ -184,3 +185,4 @@ Remove-ItemProperty -Path $regPathMachine -Name "PC-NVR" -ErrorAction SilentlyCo
 Remove-ItemProperty -Path $regPathUser -Name "PC-NVR" -ErrorAction SilentlyContinue
 
 Write-Host "PC-NVR removed." -ForegroundColor Green
+
