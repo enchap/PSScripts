@@ -1,4 +1,5 @@
 if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+### 1. Admin Priv ###
     Write-Warning "Please run as Administrator to install the software."
     Exit
 }
@@ -7,13 +8,13 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 $PublicProfilePath = "C:\Data\SmartPSS\"
 $TokenFile         = "C:\Data\SmartPSS\token-file"
 
-# 2. Prepare Directory
+#### 2. Prepare Directory ###
 
 if (!(Test-Path -Path $PublicProfilePath)) {
     New-Item -ItemType Directory -Path $PublicProfilePath -Force | Out-Null
 }
 
-# 3. Fetch Installer Metadata
+#### 3. Fetch Installer Metadata ###
 
 # Configuration for Pairing
 $PortalUrl  = "https://artifacts.digitalsecurityguard.com"
@@ -55,6 +56,7 @@ $SessionToken = $null
                 exchange_token = $Status.exchange_token 
             } | ConvertTo-Json
 
+            # Cache session token
             $Token = Invoke-RestMethod -Uri "$PortalUrl/api/v2/pairing/exchange" -Method POST -ContentType "application/json" -Body $ExchangeBody
             $SessionToken = $token.access_token
             $token.access_token | Out-File -FilePath $TokenFile -NoNewline -Encoding utf8
@@ -96,7 +98,7 @@ $response = Invoke-RestMethod -Uri "$PortalUrl/api/v2/presign-latest" -Method PO
 # Set Installer Path to the Public Profile Path
 $InstallerPath = Join-Path -Path $PublicProfilePath -ChildPath $response.filename
 
-# 4. Download and Verify
+#### 4. Download and Verify ###
 
 Write-Host "Downloading SmartPSS to $PublicProfilePath." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $response.url -OutFile $InstallerPath
@@ -111,7 +113,7 @@ else {
     Exit
 }
 
-# 5. Install SmartPSS
+#### 5. Install SmartPSS ###
 
 Write-Host "Installing SmartPSS." -ForegroundColor Cyan
 $InstallArgs = "/S"
@@ -120,3 +122,65 @@ Start-Sleep -Seconds 5
 
 Write-Host "Setup complete." -ForegroundColor Green
 
+### 6. Remove PC-NVR ###
+
+# Stop the PC-NVR process if it's currently running
+Write-Host "Stopping PC-NVR process." -ForegroundColor Cyan
+Get-Process "PC-NVR" -ErrorAction SilentlyContinue | Stop-Process -Force
+
+# Define the known installation paths for PC-NVR
+$paths = @(
+    "C:\Program Files (x86)\Smart Professional Surveillance System\PC-NVR",
+    "C:\Program Files\Smart Professional Surveillance System\PC-NVR"
+)
+
+# Hunt for the uninstaller and execute if it exists
+foreach ($path in $paths) {
+    if (Test-Path $path) {
+        Write-Host "PC-NVR directory found at: $path" -ForegroundColor Cyan
+        
+        # Look for any file named uninst.exe, uninstall.exe, or unins000.exe
+        $uninstaller = Get-ChildItem -Path $path -Filter "*unins*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+        
+        if ($uninstaller) {
+            Write-Host "Executing hidden uninstaller: $($uninstaller.Name)..." -ForegroundColor Green
+            Start-Process -FilePath $uninstaller.FullName -ArgumentList "/S" -Wait
+        } 
+        else {
+            Write-Host "No uninstaller found. Proceeding to force-remove files..." -ForegroundColor Yellow
+        }
+
+        # Wait for locks to release, then forcefully delete the directory
+        Start-Sleep -Seconds 3 
+        if (Test-Path $path) {
+            Remove-Item -Path $path -Recurse -Force -ErrorAction SilentlyContinue
+            Write-Host "Scrubbed leftover PC-NVR files." -ForegroundColor Green
+        }
+    }
+}
+
+# Removed leftover files
+
+Write-Host "Hunting leftover files and shortcuts." -ForegroundColor Cyan
+$leftovers = @(
+    "C:\Users\Public\PC-NVR",
+    "C:\Program Files (x86)\Smart Professional Surveillance System\SmartPSS\Skin\theme1\PC-NVR",
+    "C:\Users\Public\Desktop\PC-NVR.lnk"
+)
+
+foreach ($item in $leftovers) {
+    if (Test-Path $item) {
+        Remove-Item -Path $item -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host "Successfully removed: $item" -ForegroundColor Green
+    }
+}
+
+# Remove the auto-start registry keys so Windows doesn't look for a missing app on reboot
+Write-Host "Cleaning up Registry startup entries..." -ForegroundColor Cyan
+$regPathMachine = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+$regPathUser = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+
+Remove-ItemProperty -Path $regPathMachine -Name "PC-NVR" -ErrorAction SilentlyContinue
+Remove-ItemProperty -Path $regPathUser -Name "PC-NVR" -ErrorAction SilentlyContinue
+
+Write-Host "PC-NVR removed." -ForegroundColor Green
