@@ -25,20 +25,28 @@ if ($installedApp) {
     Write-Host "Existing SmartPSS found (Version: $($installedApp.DisplayVersion)). `nUninstalling." -ForegroundColor Yellow
     $uninstallString = $installedApp.UninstallString
     
-    # Extract the executable path from the registry string (handles paths with or without quotes)
-    $uninstallerRegex = '^(?:"([^"]+)"|([^\s]+))'
-    if ($uninstallString -match $uninstallerRegex) {
-        $exePath = $matches[1] + $matches[2]
-        
-        if (Test-Path $exePath) {
-            Write-Host "Executing uninstaller silently." -ForegroundColor Cyan
-            Start-Process -FilePath $exePath -ArgumentList "/S" -Wait
-            Write-Host "`nUninstallation complete." -ForegroundColor Green
-            Start-Sleep -Seconds 5
-        } 
-        else {
-            Write-Host "Uninstaller executable not found at $exePath." -ForegroundColor Red
-        }
+    # Safely extract the executable path, handling unquoted spaces and rogue arguments
+    if ($uninstallString -match '^"([^"]+)"') {
+        # Handles properly quoted paths: "C:\Path\uninst.exe"
+        $exePath = $matches[1]
+    } 
+    elseif ($uninstallString -match '^(.*?\.exe)') {
+        # Handles unquoted paths by grabbing everything up to and including .exe
+        $exePath = $matches[1]
+    } 
+    else {
+        # Fallback
+        $exePath = $uninstallString
+    }
+    
+    if (Test-Path $exePath) {
+        Write-Host "Executing uninstaller silently..." -ForegroundColor Cyan
+        Start-Process -FilePath $exePath -ArgumentList "/S" -Wait
+        Write-Host "Uninstallation complete." -ForegroundColor Green
+        Start-Sleep -Seconds 5
+    } 
+    else {
+        Write-Host "Uninstaller executable not found at '$exePath'." -ForegroundColor Red
     }
 } 
 else {
@@ -49,13 +57,13 @@ else {
 $PublicProfilePath = "C:\Data\SmartPSS\"
 $TokenFile         = "C:\Data\SmartPSS\token-file"
 
-#### 2. Prepare Directory ###
+#### 3. Prepare Directory ###
 
 if (!(Test-Path -Path $PublicProfilePath)) {
     New-Item -ItemType Directory -Path $PublicProfilePath -Force | Out-Null
 }
 
-#### 3. Fetch Installer Metadata ###
+#### 4. Fetch Installer Metadata ###
 
 # Configuration for Pairing
 $PortalUrl  = "https://artifacts.digitalsecurityguard.com"
@@ -139,7 +147,7 @@ $response = Invoke-RestMethod -Uri "$PortalUrl/api/v2/presign-latest" -Method PO
 # Set Installer Path to the Public Profile Path
 $InstallerPath = Join-Path -Path $PublicProfilePath -ChildPath $response.filename
 
-#### 4. Download and Verify ###
+#### 5. Download and Verify ###
 
 Write-Host "Downloading SmartPSS to $PublicProfilePath." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $response.url -OutFile $InstallerPath
@@ -154,7 +162,7 @@ else {
     Exit
 }
 
-#### 5. Install SmartPSS ###
+#### 6. Install SmartPSS ###
 
 Write-Host "Installing SmartPSS." -ForegroundColor Cyan
 $InstallArgs = "/S"
@@ -163,7 +171,7 @@ Start-Sleep -Seconds 5
 
 Write-Host "Setup complete." -ForegroundColor Green
 
-### 6. Remove PC-NVR ###
+### 7. Remove PC-NVR ###
 
 # Stop the PC-NVR process if it's currently running
 Write-Host "Stopping PC-NVR process." -ForegroundColor Cyan
