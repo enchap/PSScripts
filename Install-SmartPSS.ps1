@@ -164,7 +164,7 @@ else {
 
 #### 6. Install SmartPSS ###
 
-Write-Host "Installing SmartPSS." -ForegroundColor Cyan
+Write-Host "`nInstalling SmartPSS." -ForegroundColor Cyan
 $InstallArgs = "/S"
 Start-Process $InstallerPath -ArgumentList $InstallArgs -Wait
 Start-Sleep -Seconds 5
@@ -192,11 +192,11 @@ foreach ($path in $paths) {
         $uninstaller = Get-ChildItem -Path $path -Filter "*unins*.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
         
         if ($uninstaller) {
-            Write-Host "Executing hidden uninstaller: $($uninstaller.Name)..." -ForegroundColor Green
+            Write-Host "Executing hidden uninstaller: $($uninstaller.Name)." -ForegroundColor Green
             Start-Process -FilePath $uninstaller.FullName -ArgumentList "/S" -Wait
         } 
         else {
-            Write-Host "No uninstaller found. Proceeding to force-remove files..." -ForegroundColor Yellow
+            Write-Host "No uninstaller found. Proceeding to force-remove files." -ForegroundColor Yellow
         }
 
         # Wait for locks to release, then forcefully delete the directory
@@ -225,7 +225,7 @@ foreach ($item in $leftovers) {
 }
 
 # Remove the auto-start registry keys so Windows doesn't look for a missing app on reboot
-Write-Host "Cleaning up Registry startup entries..." -ForegroundColor Cyan
+Write-Host "Cleaning up Registry startup entries." -ForegroundColor Cyan
 $regPathMachine = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
 $regPathUser = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
 
@@ -251,4 +251,3 @@ if ($installedApp) {
 else {
     Write-Host "`nSmartPSS installation failed." -ForegroundColor Red
 }
-
