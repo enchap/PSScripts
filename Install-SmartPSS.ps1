@@ -5,6 +5,46 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
 }
 $ErrorActionPreference = "Stop"
 
+### 2. Uninstall Existing SmartPSS ###
+Write-Host "Checking for existing SmartPSS installation." -ForegroundColor Cyan
+
+# Stop SmartPSS & PC-NVR if they're currently running to prevent locked files during uninstall
+Get-Process "SmartPSS" -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process "PC-NVR" -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Seconds 2
+
+# Search both 32-bit and 64-bit registry paths
+$uninstallPaths = @(
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+    "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
+)
+
+$installedApp = Get-ItemProperty $uninstallPaths -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -match "SmartPSS" }
+
+if ($installedApp) {
+    Write-Host "Existing SmartPSS found (Version: $($installedApp.DisplayVersion)). `nUninstalling." -ForegroundColor Yellow
+    $uninstallString = $installedApp.UninstallString
+    
+    # Extract the executable path from the registry string (handles paths with or without quotes)
+    $uninstallerRegex = '^(?:"([^"]+)"|([^\s]+))'
+    if ($uninstallString -match $uninstallerRegex) {
+        $exePath = $matches[1] + $matches[2]
+        
+        if (Test-Path $exePath) {
+            Write-Host "Executing uninstaller silently." -ForegroundColor Cyan
+            Start-Process -FilePath $exePath -ArgumentList "/S" -Wait
+            Write-Host "`nUninstallation complete." -ForegroundColor Green
+            Start-Sleep -Seconds 5
+        } 
+        else {
+            Write-Host "Uninstaller executable not found at $exePath." -ForegroundColor Red
+        }
+    }
+} 
+else {
+    Write-Host "No existing SmartPSS installation found. Proceeding." -ForegroundColor Green
+}
+
 # File Variables
 $PublicProfilePath = "C:\Data\SmartPSS\"
 $TokenFile         = "C:\Data\SmartPSS\token-file"
@@ -186,3 +226,21 @@ Remove-ItemProperty -Path $regPathUser -Name "PC-NVR" -ErrorAction SilentlyConti
 
 Write-Host "PC-NVR removed." -ForegroundColor Green
 
+### 8. Final Installation Validation ###
+Write-Host "Validating SmartPSS installation." -ForegroundColor Cyan
+
+$uninstallPaths = @(
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+    "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
+)
+
+# Search the registry for the newly installed application
+$installedApp = Get-ItemProperty $uninstallPaths -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -match "SmartPSS" }
+
+if ($installedApp) {
+    Write-Host "`nSmartPSS installation success." -ForegroundColor Green
+} else {
+    Write-Host "`nSmartPSS installation failed." -ForegroundColor Red
+    # Optional: Throw an actual error here if you want your RMM/deployment tool to flag it as a failed deployment
+    # throw "SmartPSS installation failed."
+}
