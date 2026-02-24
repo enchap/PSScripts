@@ -1,4 +1,3 @@
-﻿$ErrorActionPreference = "Stop"
 if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Warning "Please run as Administrator to install the software."
     Exit
@@ -120,3 +119,4 @@ Start-Process $InstallerPath -ArgumentList $InstallArgs -Wait
 Start-Sleep -Seconds 5
 
 Write-Host "Setup complete." -ForegroundColor Green
+
