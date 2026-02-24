@@ -247,8 +247,8 @@ $installedApp = Get-ItemProperty $uninstallPaths -ErrorAction SilentlyContinue |
 
 if ($installedApp) {
     Write-Host "`nSmartPSS installation success." -ForegroundColor Green
-} else {
+} 
+else {
     Write-Host "`nSmartPSS installation failed." -ForegroundColor Red
-    # Optional: Throw an actual error here if you want your RMM/deployment tool to flag it as a failed deployment
-    # throw "SmartPSS installation failed."
 }
+
