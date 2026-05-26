@@ -1,4 +1,11 @@
-﻿### 1. Install SmartPSS ###
+if (!([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    # Admin Check
+    Write-Warning "Please run as Administrator."
+    Start-Sleep -Seconds 3
+    Exit
+}
+
+### 1. Install SmartPSS ###
 
 $InstallerPath = "C:\Data\SmartPSS Lite 8_25.exe"
 Write-Host "`nInstalling SmartPSS Lite." -ForegroundColor Cyan
@@ -71,7 +78,7 @@ Remove-ItemProperty -Path $regPathUser -Name "PC-NVR" -ErrorAction SilentlyConti
 
 Write-Host "PC-NVR removed." -ForegroundColor Green
 
-### 8. Final Installation Validation ###
+### 3. Final Installation Validation ###
 Write-Host "Validating SmartPSS installation." -ForegroundColor Cyan
 
 $uninstallPaths = @(
